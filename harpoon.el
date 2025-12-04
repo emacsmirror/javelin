@@ -2,11 +2,12 @@
 
 ;; Copyright (C) 2022  Otávio Schwanck, 2025 Damian Barabonkov
 
-;; Author: Otávio Schwanck <otavioschwanck@gmail.com>
+;; Author: Damian Barabonkov
 ;; Keywords: tools languages
-;; Homepage: https://github.com/otavioschwanck/harpoon.el
+;; Homepage: https://github.com/DamianB-BitFlipper/harpoon.el
+;; Based on: https://github.com/otavioschwanck/harpoon.el
 ;; Version: 0.5
-;; Package-Requires: ((emacs "27.2") (f "0.20.0") (project "0.8.1"))
+;; Package-Requires: ((emacs "28.1") (f "0.20.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -28,18 +29,10 @@
 ;; You can easily add, reorder and delete bookmarks.  The bookmarks are
 ;; separated by project and branch.
 
-;;; Changelog
-;;; 0.5
-;;; Fix when project is not loaded
-
-;;; Code:
 (require 'f)
 (require 'subr-x)
 
-(defun harpoon--default-project-package ()
-  "Return the default project package."
-  (if (featurep 'projectile) 'projectile 'project))
-
+;;; --- Customizable variables ---
 (defgroup harpoon nil
   "Organize bookmarks by project and branch."
   :group 'tools)
@@ -48,161 +41,175 @@
   "When project is not found, use this function instead."
   :type 'string)
 
-(defcustom harpoon-cache-file (concat user-emacs-directory ".local/harpoon/")
+(defcustom harpoon-cache-dir (concat user-emacs-directory ".local/harpoon/")
   "Where the cache will be saved."
   :type 'string)
-
-(defcustom harpoon-project-package (harpoon--default-project-package)
-  "Project package to access project functions."
-  :type 'symbol)
 
 (defcustom harpoon-separate-by-branch t
   "Harpoon separated by branch."
   :type 'boolean)
+;;; --- Customizable variables ---
 
-(defvar harpoon-cache '()
-  "Cache for harpoon.")
+(defun harpoon--package-name ()
+  "Return harpoon package name."
+  "harpoon")
 
-(defvar harpoon-cache-loaded nil
-  "Cache for harpoon.")
+(defvar harpoon-project-provider (if (featurep 'projectile) 'projectile 'project)
+  "Project provider to use for getting project root.
+Can be `projectile' or `project'.")
 
-(defun harpoon-project-root-function ()
-  "Get the project root."
+(defvar harpoon-git-branch-provider (if (featurep 'magit) 'magit 'git)
+  "Git branch provider to use for getting current branch.
+Can be `magit' or `git'.")
+
+(defun harpoon--get-project-root ()
+  "Get the project root.
+Returns the project root path as a string, or nil if there is no project."
   (cond
-   ((eq harpoon-project-package 'projectile) (when (fboundp 'projectile-project-root) (projectile-project-root)))
-   ((eq harpoon-project-package 'project) (expand-file-name (when (fboundp 'project-root) (project-root (project-current)))))))
-
-(defun harpoon--current-file-directory ()
-  "Return current directory path sanitized."
-  (harpoon--sanitize (file-name-directory buffer-file-name)))
-
-(defun harpoon--has-project ()
-  "Get the project name."
-  (let ((project-name (harpoon--get-project-name)))
-    (not (or (string= project-name "") (string= project-name "-") (string= project-name nil)))))
+   ((eq harpoon-project-provider 'projectile) (projectile-project-root))
+   ((eq harpoon-project-provider 'project)
+    (when-let ((proj (project-current)))
+      (expand-file-name (project-root proj))))))
 
 (defun harpoon--get-project-name ()
-  "Get the harpoon project name."
-  (condition-case nil (cond
-                       ((eq harpoon-project-package 'projectile) (when (fboundp 'projectile-project-name) (projectile-project-name)))
-                       ((eq harpoon-project-package 'project) (harpoon--get-project-name-for-project)))
-    (error nil)))
-
-(defun harpoon-project-name-function ()
-  "Get the project name."
-  (if (harpoon--has-project) (harpoon--get-project-name) (funcall harpoon-without-project-function)))
-
-(defun harpoon--get-project-name-for-project ()
-  "Return projects name for project."
-  (let* ((splitted-project-path (split-string (project-root (project-current)) "/"))
-         (splitted-length (length splitted-project-path))
-         (project-name (nth (- splitted-length 2) splitted-project-path)))
-    project-name))
+  "Get the harpoon project name.
+Returns the project name as a string, or nil if there is no project."
+  (when (harpoon--get-project-root)
+    (cond
+     ((eq harpoon-project-provider 'projectile) (projectile-project-name))
+     ;; The `project' package has no built-in way to get the project name.
+     ;; Extract it by splitting the project root path by "/" and taking
+     ;; the second-to-last element (the directory name before the trailing slash).
+     ;; e.g., "/home/user/projects/myproject/" -> "myproject"
+     ((eq harpoon-project-provider 'project)
+      (let* ((project-path (harpoon--get-project-root))
+             (path-parts (split-string project-path "/"))
+             (name-index (- (length path-parts) 2)))
+        (nth name-index path-parts))))))
 
 (defun harpoon--get-branch-name ()
-  "Get the branch name for harpoon."
-  (car (split-string
-        (shell-command-to-string
-         (concat "cd " (harpoon-project-root-function) "; git rev-parse --abbrev-ref HEAD")) "\n")))
+  "Get the branch name for harpoon.
+Uses `harpoon-git-branch-provider' to determine the method."
+  (cond
+   ((eq harpoon-git-branch-provider 'magit)
+    (magit-get-current-branch))
+   ((eq harpoon-git-branch-provider 'git)
+    (string-trim
+     (shell-command-to-string
+      (concat "cd " (harpoon--get-project-root) "; git rev-parse --abbrev-ref HEAD"))))))
 
 (defun harpoon--cache-key ()
-  "Key to save current file on cache."
-  (if (harpoon--has-project) (if harpoon-separate-by-branch
-                                 (concat (harpoon--sanitize (harpoon-project-name-function))
-                                         "#"
-                                         (harpoon--sanitize (harpoon--get-branch-name)))
-                               (harpoon--sanitize (harpoon-project-name-function)))
-    (harpoon--sanitize (harpoon-project-name-function))))
+  "Key to save current file on cache.
+Returns nil if there is no project."
+  ;; Use `url-hexify-string' to percent-encode the cache key, making it
+  ;; filename-friendly by escaping "/" and other forbidden characters.
+  (when-let ((project-name (harpoon--get-project-name)))
+    (url-hexify-string
+     (if harpoon-separate-by-branch
+         (concat project-name "#" (harpoon--get-branch-name))
+       project-name))))
 
-(defun harpoon--create-directory ()
-  "Create harpoon cache dir if doesn't exist."
-  (unless (f-directory? harpoon-cache-file)
-    (make-directory harpoon-cache-file t)))
-
-(defun harpoon--file-name ()
+(defun harpoon--cache-file-name ()
   "File name for harpoon on current project."
-  (concat harpoon-cache-file (harpoon--cache-key) ".json"))
+  (concat harpoon-cache-dir (harpoon--cache-key) ".json"))
 
-(defun harpoon--read-json ()
-  "Read and parse the harpoon JSON file.
-Returns a list of alists with `harpoon_number' and `filepath' keys."
-  (if (file-exists-p (harpoon--file-name))
-      (condition-case nil
-          (json-parse-string (f-read (harpoon--file-name) 'utf-8)
-                             :object-type 'alist
-                             :array-type 'list)
-        (error '()))
-    '()))
+(defun harpoon--ensure-cache-file ()
+  "Create harpoon cache dir and file if they don't exist."
+  (unless (f-directory? harpoon-cache-dir)
+    (make-directory harpoon-cache-dir t))
+  (unless (file-exists-p (harpoon--cache-file-name))
+    (f-write-text (json-serialize '()) 'utf-8 (harpoon--cache-file-name))))
 
-(defun harpoon--write-json (data)
+(defun harpoon--sort-positions (data)
+  "Sort DATA by `harpoon_position' in increasing order."
+  (seq-sort (lambda (a b)
+              (< (alist-get 'harpoon_position a)
+                 (alist-get 'harpoon_position b)))
+            data))
+
+(defun harpoon--read-harpoon-positions ()
+  "Read and parse the harpoon positions cache JSON file.
+Returns a list of alists with `harpoon_position' and `filepath' keys."
+  (let ((data (if (file-exists-p (harpoon--cache-file-name))
+                  (condition-case nil
+                      (json-parse-string (f-read (harpoon--cache-file-name) 'utf-8)
+                                         :object-type 'alist
+                                         :array-type 'list)
+                    ;; JSON file got corrupted, delete it and return empty list
+                    (error
+                     (delete-file (harpoon--cache-file-name))
+                     '()))
+                '())))
+    (harpoon--sort-positions data)))
+
+(defun harpoon--write-harpoon-positions (data)
   "Write DATA to the harpoon JSON file.
-DATA should be a list of alists with `harpoon_number' and `filepath' keys."
-  (harpoon--create-directory)
-  (f-write-text (json-serialize data) 'utf-8 (harpoon--file-name)))
+DATA should be a list of alists with `harpoon_position' and `filepath' keys.
+Entries are sorted by `harpoon_position' in increasing order before writing.
+Creates the cache file if it does not exist."
+  (harpoon--ensure-cache-file)
+  (f-write-text (json-serialize (harpoon--sort-positions data)) 'utf-8 (harpoon--cache-file-name)))
 
-(defun harpoon--get-filepath-by-number (harpoon-number)
-  "Get the filepath for a given HARPOON-NUMBER.
+(defun harpoon--get-filepath-by-position (harpoon-position)
+  "Get the filepath for a given HARPOON-POSITION.
 Returns nil if not found."
-  (let ((data (harpoon--read-json)))
+  (let ((data (harpoon--read-harpoon-positions)))
     (alist-get 'filepath
                (seq-find (lambda (item)
-                           (= (alist-get 'harpoon_number item) harpoon-number))
+                           (= (alist-get 'harpoon_position item) harpoon-position))
                          data))))
 
-(defun harpoon--set-filepath-by-number (harpoon-number filepath)
-  "Set FILEPATH for a given HARPOON-NUMBER.
+(defun harpoon--set-filepath-by-position (harpoon-position filepath)
+  "Set FILEPATH for a given HARPOON-POSITION.
 Updates existing entry or adds a new one."
-  (let* ((data (harpoon--read-json))
+  (let* ((data (harpoon--read-harpoon-positions))
          (existing (seq-find (lambda (item)
-                               (= (alist-get 'harpoon_number item) harpoon-number))
+                               (= (alist-get 'harpoon_position item) harpoon-position))
                              data)))
     (if existing
         ;; Update existing entry
         (setf (alist-get 'filepath existing) filepath)
       ;; Add new entry
-      (push `((harpoon_number . ,harpoon-number) (filepath . ,filepath)) data))
-    (harpoon--write-json data)))
+      (push `((harpoon_position . ,harpoon-position) (filepath . ,filepath)) data))
+    (harpoon--write-harpoon-positions data)))
 
-(defun harpoon--remove-by-number (harpoon-number)
-  "Remove entry with HARPOON-NUMBER from the harpoon list."
-  (let ((data (harpoon--read-json)))
-    (harpoon--write-json
+(defun harpoon--remove-filepath-by-position (harpoon-position)
+  "Remove entry with HARPOON-POSITION from the harpoon list."
+  (let ((data (harpoon--read-harpoon-positions)))
+    (harpoon--write-harpoon-positions
      (seq-remove (lambda (item)
-                   (= (alist-get 'harpoon_number item) harpoon-number))
+                   (= (alist-get 'harpoon_position item) harpoon-position))
                  data))))
 
-(defun harpoon--get-all-filepaths ()
-  "Get all filepaths from harpoon, sorted by harpoon_number.
-Returns a list of filepaths."
-  (let ((data (harpoon--read-json)))
-    (mapcar (lambda (item) (alist-get 'filepath item))
-            (seq-sort (lambda (a b)
-                        (< (alist-get 'harpoon_number a)
-                           (alist-get 'harpoon_number b)))
-                      data))))
+(defun harpoon--next-available-position ()
+  "Get the next available harpoon position.
+Scans positions 1-9 and returns the first gap found.
+Returns nil if all positions 1-9 are taken."
+  (let ((data (harpoon--read-harpoon-positions)))
+    (cl-loop for pos from 1 to 9
+             unless (seq-find (lambda (item)
+                                (= (alist-get 'harpoon_position item) pos))
+                              data)
+             return pos)))
 
-(defun harpoon--next-available-number ()
-  "Get the next available harpoon number."
-  (let* ((data (harpoon--read-json))
-         (numbers (mapcar (lambda (item) (alist-get 'harpoon_number item)) data)))
-    (if numbers (1+ (apply #'max numbers)) 1)))
+(defun harpoon--buffer-filepath-relative-to-root ()
+  "Get buffer file name relative to project root.
+Returns the relative path if in a project, otherwise the absolute path."
+  (let ((project-root (harpoon--get-project-root)))
+    (if project-root
+        (file-relative-name (buffer-file-name) project-root)
+      (buffer-file-name))))
 
-(defun harpoon--buffer-file-name ()
-  "Parse harpoon file name."
-  (if (harpoon--has-project) (s-replace-regexp (harpoon-project-root-function) "" (buffer-file-name)) (buffer-file-name)))
-
-(defun harpoon--sanitize (string)
-  "Sanitize word to save file.  STRING: String to sanitize."
-  (s-replace-regexp "/" "---" string))
+;;; --- Generic harpoon functions ---
 
 ;;;###autoload
 (defun harpoon-go-to (harpoon-number)
   "Go to specific file on harpoon by HARPOON-NUMBER."
-  (require 'project)
-  (let* ((file-name (harpoon--get-filepath-by-number harpoon-number))
+  (let* ((file-name (harpoon--get-filepath-by-position harpoon-number))
+         (project-root (harpoon--get-project-root))
          (full-file-name (when file-name
-                           (if (and (fboundp 'project-root) (harpoon--has-project))
-                               (concat (or harpoon--project-path (harpoon-project-root-function)) file-name)
+                           (if project-root
+                               (concat project-root file-name)
                              file-name))))
     (cond
      ((null file-name)
@@ -212,65 +219,24 @@ Returns a list of filepaths."
      (t
       (message "%s not found." full-file-name)))))
 
-(defun harpoon--delete (harpoon-number)
+;;;###autoload
+(defun harpoon-delete (harpoon-number)
   "Delete an item on harpoon. HARPOON-NUMBER: Position to delete."
-  (harpoon--remove-by-number harpoon-number)
+  (harpoon--remove-filepath-by-position harpoon-number)
   (message "Deleted harpoon position %d" harpoon-number))
 
 
 ;;;###autoload
-(defun harpoon-delete-1 ()
-  "Delete item harpoon on position 1."
-  (interactive)
-  (harpoon--delete 1))
+(defun harpoon-assign-to (harpoon-number)
+  "Assign the current buffer to a specific position in harpoon.
+HARPOON-NUMBER: The position (1-9) to assign the current file to."
+  (let ((file-to-add (harpoon--buffer-filepath-relative-to-root)))
+    (harpoon--set-filepath-by-position harpoon-number file-to-add)
+    (message "Assigned %s to harpoon position %d" file-to-add harpoon-number)))
 
-;;;###autoload
-(defun harpoon-delete-2 ()
-  "Delete item harpoon on position 1."
-  (interactive)
-  (harpoon--delete 2))
+;;; --- Generic harpoon functions ---
 
-;;;###autoload
-(defun harpoon-delete-3 ()
-  "Delete item harpoon on position 1."
-  (interactive)
-  (harpoon--delete 3))
-
-;;;###autoload
-(defun harpoon-delete-4 ()
-  "Delete item harpoon on position 1."
-  (interactive)
-  (harpoon--delete 4))
-
-;;;###autoload
-(defun harpoon-delete-5 ()
-  "Delete item harpoon on position 1."
-  (interactive)
-  (harpoon--delete 5))
-
-;;;###autoload
-(defun harpoon-delete-6 ()
-  "Delete item harpoon on position 1."
-  (interactive)
-  (harpoon--delete 6))
-
-;;;###autoload
-(defun harpoon-delete-7 ()
-  "Delete item harpoon on position 1."
-  (interactive)
-  (harpoon--delete 7))
-
-;;;###autoload
-(defun harpoon-delete-8 ()
-  "Delete item harpoon on position 1."
-  (interactive)
-  (harpoon--delete 8))
-
-;;;###autoload
-(defun harpoon-delete-9 ()
-  "Delete item harpoon on position 1."
-  (interactive)
-  (harpoon--delete 9))
+;;; --- Go-to functions ---
 
 ;;;###autoload
 (defun harpoon-go-to-1 ()
@@ -326,13 +292,67 @@ Returns a list of filepaths."
   (interactive)
   (harpoon-go-to 9))
 
-(defun harpoon-assign-to (harpoon-number)
-  "Assign the current buffer to a specific position in harpoon.
-HARPOON-NUMBER: The position (1-9) to assign the current file to."
-  (require 'project)
-  (let ((file-to-add (harpoon--buffer-file-name)))
-    (harpoon--set-filepath-by-number harpoon-number file-to-add)
-    (message "Assigned %s to harpoon position %d" file-to-add harpoon-number)))
+;;; --- Go-to functions ---
+
+;;; --- Delete functions ---
+
+;;;###autoload
+(defun harpoon-delete-1 ()
+  "Delete item harpoon on position 1."
+  (interactive)
+  (harpoon-delete 1))
+
+;;;###autoload
+(defun harpoon-delete-2 ()
+  "Delete item harpoon on position 1."
+  (interactive)
+  (harpoon-delete 2))
+
+;;;###autoload
+(defun harpoon-delete-3 ()
+  "Delete item harpoon on position 1."
+  (interactive)
+  (harpoon-delete 3))
+
+;;;###autoload
+(defun harpoon-delete-4 ()
+  "Delete item harpoon on position 1."
+  (interactive)
+  (harpoon-delete 4))
+
+;;;###autoload
+(defun harpoon-delete-5 ()
+  "Delete item harpoon on position 1."
+  (interactive)
+  (harpoon-delete 5))
+
+;;;###autoload
+(defun harpoon-delete-6 ()
+  "Delete item harpoon on position 1."
+  (interactive)
+  (harpoon-delete 6))
+
+;;;###autoload
+(defun harpoon-delete-7 ()
+  "Delete item harpoon on position 1."
+  (interactive)
+  (harpoon-delete 7))
+
+;;;###autoload
+(defun harpoon-delete-8 ()
+  "Delete item harpoon on position 1."
+  (interactive)
+  (harpoon-delete 8))
+
+;;;###autoload
+(defun harpoon-delete-9 ()
+  "Delete item harpoon on position 1."
+  (interactive)
+  (harpoon-delete 9))
+
+;;; --- Delete functions ---
+
+;;; --- Assign to functions ---
 
 ;;;###autoload
 (defun harpoon-assign-to-1 ()
@@ -388,102 +408,67 @@ HARPOON-NUMBER: The position (1-9) to assign the current file to."
   (interactive)
   (harpoon-assign-to 9))
 
+;;; --- Assign to functions ---
+
 ;;;###autoload
 (defun harpoon-go-to-next ()
   "Go to the next file in harpoon."
   (interactive)
-  (let* ((data (harpoon--read-json))
-         (sorted-data (seq-sort (lambda (a b)
-                                  (< (alist-get 'harpoon_number a)
-                                     (alist-get 'harpoon_number b)))
-                                data))
-         (files (mapcar (lambda (item) (alist-get 'filepath item)) sorted-data))
-         (current-file (harpoon--buffer-file-name))
+  (let* ((data (harpoon--read-harpoon-positions))
+         (files (mapcar (lambda (item) (alist-get 'filepath item)) data))
+         (current-file (harpoon--buffer-filepath-relative-to-root))
          (current-index (or (cl-position current-file files :test 'string=) -1))
          (next-index (mod (+ current-index 1) (length files)))
-         (next-item (nth next-index sorted-data)))
+         (next-item (nth next-index data)))
     (when next-item
-      (harpoon-go-to (alist-get 'harpoon_number next-item)))))
+      (harpoon-go-to (alist-get 'harpoon_position next-item)))))
 
 ;;;###autoload
 (defun harpoon-go-to-prev ()
   "Go to the previous file in harpoon."
   (interactive)
-  (let* ((data (harpoon--read-json))
-         (sorted-data (seq-sort (lambda (a b)
-                                  (< (alist-get 'harpoon_number a)
-                                     (alist-get 'harpoon_number b)))
-                                data))
-         (files (mapcar (lambda (item) (alist-get 'filepath item)) sorted-data))
-         (current-file (harpoon--buffer-file-name))
+  (let* ((data (harpoon--read-harpoon-positions))
+         (files (mapcar (lambda (item) (alist-get 'filepath item)) data))
+         (current-file (harpoon--buffer-filepath-relative-to-root))
          (current-index (or (cl-position current-file files :test 'string=) -1))
          (prev-index (mod (+ current-index (length files) -1) (length files)))
-         (prev-item (nth prev-index sorted-data)))
+         (prev-item (nth prev-index data)))
     (when prev-item
-      (harpoon-go-to (alist-get 'harpoon_number prev-item)))))
+      (harpoon-go-to (alist-get 'harpoon_position prev-item)))))
 
 ;;;###autoload
 (defun harpoon-add-file ()
   "Add current file to harpoon."
   (interactive)
-  (let* ((file-to-add (harpoon--buffer-file-name))
-         (data (harpoon--read-json))
+  (let* ((file-to-add (harpoon--buffer-filepath-relative-to-root))
+         (data (harpoon--read-harpoon-positions))
          (existing (seq-find (lambda (item)
                                (string= (alist-get 'filepath item) file-to-add))
                              data)))
     (if existing
         (message "This file is already on harpoon.")
-      (let ((next-num (harpoon--next-available-number)))
-        (harpoon--set-filepath-by-number next-num file-to-add)
+      (let ((next-num (harpoon--next-available-position)))
+        (harpoon--set-filepath-by-position next-num file-to-add)
         (message "File added to harpoon at position %d." next-num)))))
-
-(defun harpoon--package-name ()
-  "Return harpoon package name."
-  "harpoon")
-
-;;;###autoload
-(defun harpoon-toggle-file ()
-  "Open harpoon JSON file for viewing/editing."
-  (interactive)
-  (harpoon--create-directory)
-  ;; Ensure file exists with empty array if it doesn't
-  (unless (file-exists-p (harpoon--file-name))
-    (harpoon--write-json '()))
-  (find-file (harpoon--file-name)))
 
 ;;;###autoload
 (defun harpoon-toggle-quick-menu ()
-  "Open quickmenu."
+  "Open quick menu to select a harpooned file."
   (interactive)
-  (let ((result (harpoon--fix-quick-menu-items)))
-    (when (and result (not (string-equal result "")))
-      (find-file (if (harpoon--has-project) (concat (harpoon-project-root-function) (harpoon--remove-number result))
-                   (harpoon--remove-number result))))))
-
-(defun harpoon--remove-number (file)
-  "Remove number of the file. FILE = Filename to remove the number."
-  (nth 1 (split-string file " - ")))
-
-(defun harpoon--fix-quick-menu-items ()
-  "Fix harpoon quick menu items."
-  (let* ((data (harpoon--read-json))
-         (sorted-data (seq-sort (lambda (a b)
-                                  (< (alist-get 'harpoon_number a)
-                                     (alist-get 'harpoon_number b)))
-                                data))
-         (items (mapcar (lambda (item)
-                          (format "%d - %s"
-                                  (alist-get 'harpoon_number item)
-                                  (alist-get 'filepath item)))
-                        sorted-data)))
-    (completing-read "Harpoon to file: " items)))
+  (let* ((data (harpoon--read-harpoon-positions))
+         (candidates (mapcar (lambda (item)
+                               (cons (alist-get 'filepath item) item))
+                             data))
+         (selection (completing-read "Harpoon to file: " candidates)))
+    (when selection
+      (harpoon-go-to (alist-get 'harpoon_position (cdr (assoc selection candidates)))))))
 
 ;;;###autoload
 (defun harpoon-clear ()
   "Clear harpoon files."
   (interactive)
   (when (yes-or-no-p "Do you really want to clear harpoon file? ")
-    (harpoon--write-json '())
+    (harpoon--write-harpoon-positions '())
     (message "Harpoon cleaned.")))
 
 (provide 'harpoon)
