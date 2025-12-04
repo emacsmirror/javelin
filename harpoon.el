@@ -452,10 +452,19 @@ HARPOON-NUMBER: The position (1-9) to assign the current file to."
   (interactive)
   (let* ((data (harpoon--read-harpoon-positions))
          (candidates (mapcar (lambda (item)
-                               (cons (alist-get 'filepath item) item))
+                               (cons (format "%d: %s"
+                                             (alist-get 'harpoon_position item)
+                                             (alist-get 'filepath item))
+                                     item))
                              data))
-         (selection (completing-read "Harpoon to file: " candidates)))
-    (when selection
+         (candidate-strings (mapcar #'car candidates))
+         ;; Completion table that preserves order (disables sorting)
+         (collection (lambda (string pred action)
+                       (if (eq action 'metadata)
+                           '(metadata (display-sort-function . identity)
+                                      (cycle-sort-function . identity))
+                         (complete-with-action action candidate-strings string pred)))))
+    (when-let ((selection (completing-read "Harpoon to file: " collection)))
       (harpoon-go-to (alist-get 'harpoon_position (cdr (assoc selection candidates)))))))
 
 ;;;###autoload
