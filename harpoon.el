@@ -37,10 +37,6 @@
   "Organize bookmarks by project and branch."
   :group 'tools)
 
-(defcustom harpoon-without-project-function 'harpoon--package-name
-  "When project is not found, use this function instead."
-  :type 'string)
-
 (defcustom harpoon-cache-dir (concat user-emacs-directory ".local/harpoon/")
   "Where the cache will be saved."
   :type 'string)
@@ -49,10 +45,6 @@
   "Harpoon separated by branch."
   :type 'boolean)
 ;;; --- Customizable variables ---
-
-(defun harpoon--package-name ()
-  "Return harpoon package name."
-  "harpoon")
 
 (defvar harpoon-project-provider (if (featurep 'projectile) 'projectile 'project)
   "Project provider to use for getting project root.
@@ -304,49 +296,49 @@ HARPOON-NUMBER: The position (1-9) to assign the current file to."
 
 ;;;###autoload
 (defun harpoon-delete-2 ()
-  "Delete item harpoon on position 1."
+  "Delete item harpoon on position 2."
   (interactive)
   (harpoon-delete 2))
 
 ;;;###autoload
 (defun harpoon-delete-3 ()
-  "Delete item harpoon on position 1."
+  "Delete item harpoon on position 3."
   (interactive)
   (harpoon-delete 3))
 
 ;;;###autoload
 (defun harpoon-delete-4 ()
-  "Delete item harpoon on position 1."
+  "Delete item harpoon on position 4."
   (interactive)
   (harpoon-delete 4))
 
 ;;;###autoload
 (defun harpoon-delete-5 ()
-  "Delete item harpoon on position 1."
+  "Delete item harpoon on position 5."
   (interactive)
   (harpoon-delete 5))
 
 ;;;###autoload
 (defun harpoon-delete-6 ()
-  "Delete item harpoon on position 1."
+  "Delete item harpoon on position 6."
   (interactive)
   (harpoon-delete 6))
 
 ;;;###autoload
 (defun harpoon-delete-7 ()
-  "Delete item harpoon on position 1."
+  "Delete item harpoon on position 7."
   (interactive)
   (harpoon-delete 7))
 
 ;;;###autoload
 (defun harpoon-delete-8 ()
-  "Delete item harpoon on position 1."
+  "Delete item harpoon on position 8."
   (interactive)
   (harpoon-delete 8))
 
 ;;;###autoload
 (defun harpoon-delete-9 ()
-  "Delete item harpoon on position 1."
+  "Delete item harpoon on position 9."
   (interactive)
   (harpoon-delete 9))
 
