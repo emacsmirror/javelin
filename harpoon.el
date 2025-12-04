@@ -6,7 +6,7 @@
 ;; Keywords: tools languages
 ;; Homepage: https://github.com/DamianB-BitFlipper/harpoon.el
 ;; Based on: https://github.com/otavioschwanck/harpoon.el
-;; Version: 0.5
+;; Version: 0.1
 ;; Package-Requires: ((emacs "28.1") (f "0.20.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -24,10 +24,12 @@
 
 ;;; Commentary:
 
-;; This is a plugin base on harpoon from vim (by ThePrimeagen).  Is like a
-;; bookmark manager on steroids.
-;; You can easily add, reorder and delete bookmarks.  The bookmarks are
-;; separated by project and branch.
+;; This is a plugin based on harpoon from vim (by ThePrimeagen).
+;;
+;; It is a buffer quick-bookmark manager on steroids. Each "bookmark" is called a harpoon
+;; position, and you can easily assign and delete buffers to harpoon positions. Harpoon
+;; positions are namespaced by project and branch if within a git repository. Otherwise,
+;; just by project if not within git. Globally namespaced otherwise.
 
 (require 'f)
 (require 'subr-x)
@@ -141,9 +143,13 @@ Returns a list of alists with `harpoon_position' and `filepath' keys."
   "Write DATA to the harpoon JSON file.
 DATA should be a list of alists with `harpoon_position' and `filepath' keys.
 Entries are sorted by `harpoon_position' in increasing order before writing.
-Creates the cache file if it does not exist."
-  (harpoon--ensure-cache-file)
-  (f-write-text (json-serialize (vconcat (harpoon--sort-positions data))) 'utf-8 (harpoon--cache-file-name)))
+Creates the cache file if it does not exist.
+If DATA is empty, deletes the cache file instead."
+  (if (null data)
+      (when (file-exists-p (harpoon--cache-file-name))
+        (delete-file (harpoon--cache-file-name)))
+    (harpoon--ensure-cache-file)
+    (f-write-text (json-serialize (vconcat (harpoon--sort-positions data))) 'utf-8 (harpoon--cache-file-name))))
 
 (defun harpoon--get-filepath-by-position (harpoon-position)
   "Get the filepath for a given HARPOON-POSITION.
@@ -462,7 +468,7 @@ HARPOON-NUMBER: The position (1-9) to assign the current file to."
          (collection (lambda (string pred action)
                        (if (eq action 'metadata)
                            '(metadata (display-sort-function . identity)
-                                      (cycle-sort-function . identity))
+                             (cycle-sort-function . identity))
                          (complete-with-action action candidate-strings string pred)))))
     (when-let ((selection (completing-read "Harpoon to file: " collection)))
       (harpoon-go-to (alist-get 'harpoon_position (cdr (assoc selection candidates)))))))
@@ -474,6 +480,16 @@ HARPOON-NUMBER: The position (1-9) to assign the current file to."
   (when (yes-or-no-p "Do you really want to clear harpoon file? ")
     (harpoon--write-harpoon-positions '())
     (message "Harpoon cleaned.")))
+
+;;;###autoload
+(defun harpoon-clear-all ()
+  "Delete all harpoon JSON cache files."
+  (interactive)
+  (when (yes-or-no-p "Do you really want to delete ALL harpoon positions? ")
+    (let ((files (directory-files harpoon-cache-dir t "\\.json$")))
+      (dolist (file files)
+        (delete-file file))
+      (message "Deleted %d harpoon position namespace(s)." (length files)))))
 
 (provide 'harpoon)
 ;;; harpoon.el ends here
