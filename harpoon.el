@@ -414,10 +414,11 @@ HARPOON-NUMBER: The position (1-9) to assign the current file to."
 ;;; --- Assign to functions ---
 
 ;;;###autoload
-(defun harpoon-go-or-assign-to (harpoon-number)
+(defun harpoon-go-or-assign-to (harpoon-number &optional force)
   "Go to harpoon position if occupied, otherwise assign current buffer to it.
-HARPOON-NUMBER: The position (1-9) to go to or assign."
-  (if (harpoon--get-filepath-by-position harpoon-number)
+HARPOON-NUMBER: The position (1-9) to go to or assign.
+With FORCE (or prefix arg C-u), always assign even if position is occupied."
+  (if (and (not force) (harpoon--get-filepath-by-position harpoon-number))
       (harpoon-go-to harpoon-number)
     (harpoon-assign-to harpoon-number)))
 
@@ -425,57 +426,66 @@ HARPOON-NUMBER: The position (1-9) to go to or assign."
 
 ;;;###autoload
 (defun harpoon-go-or-assign-to-1 ()
-  "Go to position 1 if occupied, otherwise assign current buffer to it."
+  "Go to position 1 if occupied, otherwise assign current buffer to it.
+With prefix arg C-u, always assign even if position is occupied."
   (interactive)
-  (harpoon-go-or-assign-to 1))
+  (harpoon-go-or-assign-to 1 current-prefix-arg))
 
 ;;;###autoload
 (defun harpoon-go-or-assign-to-2 ()
-  "Go to position 2 if occupied, otherwise assign current buffer to it."
+  "Go to position 2 if occupied, otherwise assign current buffer to it.
+With prefix arg C-u, always assign even if position is occupied."
   (interactive)
-  (harpoon-go-or-assign-to 2))
+  (harpoon-go-or-assign-to 2 current-prefix-arg))
 
 ;;;###autoload
 (defun harpoon-go-or-assign-to-3 ()
-  "Go to position 3 if occupied, otherwise assign current buffer to it."
+  "Go to position 3 if occupied, otherwise assign current buffer to it.
+With prefix arg C-u, always assign even if position is occupied."
   (interactive)
-  (harpoon-go-or-assign-to 3))
+  (harpoon-go-or-assign-to 3 current-prefix-arg))
 
 ;;;###autoload
 (defun harpoon-go-or-assign-to-4 ()
-  "Go to position 4 if occupied, otherwise assign current buffer to it."
+  "Go to position 4 if occupied, otherwise assign current buffer to it.
+With prefix arg C-u, always assign even if position is occupied."
   (interactive)
-  (harpoon-go-or-assign-to 4))
+  (harpoon-go-or-assign-to 4 current-prefix-arg))
 
 ;;;###autoload
 (defun harpoon-go-or-assign-to-5 ()
-  "Go to position 5 if occupied, otherwise assign current buffer to it."
+  "Go to position 5 if occupied, otherwise assign current buffer to it.
+With prefix arg C-u, always assign even if position is occupied."
   (interactive)
-  (harpoon-go-or-assign-to 5))
+  (harpoon-go-or-assign-to 5 current-prefix-arg))
 
 ;;;###autoload
 (defun harpoon-go-or-assign-to-6 ()
-  "Go to position 6 if occupied, otherwise assign current buffer to it."
+  "Go to position 6 if occupied, otherwise assign current buffer to it.
+With prefix arg C-u, always assign even if position is occupied."
   (interactive)
-  (harpoon-go-or-assign-to 6))
+  (harpoon-go-or-assign-to 6 current-prefix-arg))
 
 ;;;###autoload
 (defun harpoon-go-or-assign-to-7 ()
-  "Go to position 7 if occupied, otherwise assign current buffer to it."
+  "Go to position 7 if occupied, otherwise assign current buffer to it.
+With prefix arg C-u, always assign even if position is occupied."
   (interactive)
-  (harpoon-go-or-assign-to 7))
+  (harpoon-go-or-assign-to 7 current-prefix-arg))
 
 ;;;###autoload
 (defun harpoon-go-or-assign-to-8 ()
-  "Go to position 8 if occupied, otherwise assign current buffer to it."
+  "Go to position 8 if occupied, otherwise assign current buffer to it.
+With prefix arg C-u, always assign even if position is occupied."
   (interactive)
-  (harpoon-go-or-assign-to 8))
+  (harpoon-go-or-assign-to 8 current-prefix-arg))
 
 ;;;###autoload
 (defun harpoon-go-or-assign-to-9 ()
-  "Go to position 9 if occupied, otherwise assign current buffer to it."
+  "Go to position 9 if occupied, otherwise assign current buffer to it.
+With prefix arg C-u, always assign even if position is occupied."
   (interactive)
-  (harpoon-go-or-assign-to 9))
+  (harpoon-go-or-assign-to 9 current-prefix-arg))
 
 ;;; --- Go or assign to functions ---
 
@@ -558,6 +568,56 @@ HARPOON-NUMBER: The position (1-9) to go to or assign."
       (dolist (file files)
         (delete-file file))
       (message "Deleted all harpoon positions across %d project(s)." (length files)))))
+
+;;; --- Minor mode ---
+
+(defvar harpoon-minor-mode-map
+  (let ((map (make-sparse-keymap))
+        (delete-map (make-sparse-keymap)))
+    ;; Go or assign to position
+    (define-key map (kbd "M-1") #'harpoon-go-or-assign-to-1)
+    (define-key map (kbd "M-2") #'harpoon-go-or-assign-to-2)
+    (define-key map (kbd "M-3") #'harpoon-go-or-assign-to-3)
+    (define-key map (kbd "M-4") #'harpoon-go-or-assign-to-4)
+    (define-key map (kbd "M-5") #'harpoon-go-or-assign-to-5)
+    (define-key map (kbd "M-6") #'harpoon-go-or-assign-to-6)
+    (define-key map (kbd "M-7") #'harpoon-go-or-assign-to-7)
+    (define-key map (kbd "M-8") #'harpoon-go-or-assign-to-8)
+    (define-key map (kbd "M-9") #'harpoon-go-or-assign-to-9)
+    ;; Delete position (M-0 prefix)
+    (define-key delete-map (kbd "0") #'harpoon-clear)
+    (define-key delete-map (kbd "1") #'harpoon-delete-1)
+    (define-key delete-map (kbd "2") #'harpoon-delete-2)
+    (define-key delete-map (kbd "3") #'harpoon-delete-3)
+    (define-key delete-map (kbd "4") #'harpoon-delete-4)
+    (define-key delete-map (kbd "5") #'harpoon-delete-5)
+    (define-key delete-map (kbd "6") #'harpoon-delete-6)
+    (define-key delete-map (kbd "7") #'harpoon-delete-7)
+    (define-key delete-map (kbd "8") #'harpoon-delete-8)
+    (define-key delete-map (kbd "9") #'harpoon-delete-9)
+    (define-key map (kbd "M-0") delete-map)
+    ;; Quick menu
+    (define-key map (kbd "M--") #'harpoon-toggle-quick-menu)
+    map)
+  "Keymap for `harpoon-minor-mode'.")
+
+;;;###autoload
+(define-minor-mode harpoon-minor-mode
+  "Minor mode for quick file navigation with harpoon.
+Provides keybindings for jumping to harpooned files:
+  M-1 to M-9: Go to position (or assign if empty, C-u to force assign)
+  M-0 0: Clear all positions
+  M-0 1-9: Delete position
+  M--: Toggle quick menu"
+  :lighter " Harp"
+  :keymap harpoon-minor-mode-map
+  :global nil)
+
+;;;###autoload
+(define-globalized-minor-mode global-harpoon-minor-mode
+  harpoon-minor-mode
+  (lambda () (harpoon-minor-mode 1))
+  :group 'harpoon)
 
 (provide 'harpoon)
 ;;; harpoon.el ends here
