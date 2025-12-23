@@ -33,6 +33,14 @@
 
 (require 'f)
 (require 'subr-x)
+(require 'cl-lib)
+(require 'project)
+
+;; Since these are optional, simply declare the external functions
+;; that may or may not be available
+(declare-function projectile-project-root "projectile")
+(declare-function projectile-project-name "projectile")
+(declare-function magit-get-current-branch "magit")
 
 ;;; Code:
 
