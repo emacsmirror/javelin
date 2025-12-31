@@ -4,6 +4,12 @@ Quick file bookmarks for Emacs, inspired by [ThePrimeagen's Harpoon](https://git
 
 Pin files to numbered positions (1-9) for instant access. Positions are automatically separated by project and git branch.
 
+<p align="center">
+
+HERE
+
+</p>
+
 ## Installation
 
 ### Doom Emacs
