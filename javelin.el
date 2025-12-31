@@ -264,7 +264,7 @@ For non-file buffers, returns the buffer name."
 
 ;;;###autoload
 (defun javelin-go-to (javelin-number)
-  "Go to specific file or buffer on javelin by JAVELIN-NUMBER.
+  "Go to specific file or buffer of the javelin by JAVELIN-NUMBER.
 If already in the target buffer, just navigate to the saved position.
 Uses markers for live position tracking within a session."
   (let* ((entry (javelin--get-entry-by-position javelin-number))
@@ -317,55 +317,55 @@ Uses markers for live position tracking within a session."
 
 ;;;###autoload
 (defun javelin-go-to-1 ()
-  "Go to file 1 on javelin."
+  "Go to the buffer at position 1 of the javelin."
   (interactive)
   (javelin-go-to 1))
 
 ;;;###autoload
 (defun javelin-go-to-2 ()
-  "Go to file 2 on javelin."
+  "Go to the buffer at position 2 of the javelin."
   (interactive)
   (javelin-go-to 2))
 
 ;;;###autoload
 (defun javelin-go-to-3 ()
-  "Go to file 3 on javelin."
+  "Go to the buffer at position 3 of the javelin."
   (interactive)
   (javelin-go-to 3))
 
 ;;;###autoload
 (defun javelin-go-to-4 ()
-  "Go to file 4 on javelin."
+  "Go to the buffer at position 4 of the javelin."
   (interactive)
   (javelin-go-to 4))
 
 ;;;###autoload
 (defun javelin-go-to-5 ()
-  "Go to file 5 on javelin."
+  "Go to the buffer at position 5 of the javelin."
   (interactive)
   (javelin-go-to 5))
 
 ;;;###autoload
 (defun javelin-go-to-6 ()
-  "Go to file 6 on javelin."
+  "Go to the buffer at position 6 of the javelin."
   (interactive)
   (javelin-go-to 6))
 
 ;;;###autoload
 (defun javelin-go-to-7 ()
-  "Go to file 7 on javelin."
+  "Go to the buffer at position 7 of the javelin."
   (interactive)
   (javelin-go-to 7))
 
 ;;;###autoload
 (defun javelin-go-to-8 ()
-  "Go to file 8 on javelin."
+  "Go to the buffer at position 8 of the javelin."
   (interactive)
   (javelin-go-to 8))
 
 ;;;###autoload
 (defun javelin-go-to-9 ()
-  "Go to file 9 on javelin."
+  "Go to the buffer at position 9 of the javelin."
   (interactive)
   (javelin-go-to 9))
 
@@ -373,61 +373,61 @@ Uses markers for live position tracking within a session."
 
 ;;;###autoload
 (defun javelin-delete (javelin-number)
-  "Delete an item on javelin. JAVELIN-NUMBER: Position to delete."
+  "Delete an item of the javelin. JAVELIN-NUMBER: Position to delete."
   (javelin--remove-filepath-by-position javelin-number)
   (message "Deleted javelin position %d" javelin-number))
 
 ;;;###autoload
 (defun javelin-delete-1 ()
-  "Delete position 1 on javelin."
+  "Delete position 1 of the javelin."
   (interactive)
   (javelin-delete 1))
 
 ;;;###autoload
 (defun javelin-delete-2 ()
-  "Delete position 2 on javelin."
+  "Delete position 2 of the javelin."
   (interactive)
   (javelin-delete 2))
 
 ;;;###autoload
 (defun javelin-delete-3 ()
-  "Delete position 3 on javelin."
+  "Delete position 3 of the javelin."
   (interactive)
   (javelin-delete 3))
 
 ;;;###autoload
 (defun javelin-delete-4 ()
-  "Delete position 4 on javelin."
+  "Delete position 4 of the javelin."
   (interactive)
   (javelin-delete 4))
 
 ;;;###autoload
 (defun javelin-delete-5 ()
-  "Delete position 5 on javelin."
+  "Delete position 5 of the javelin."
   (interactive)
   (javelin-delete 5))
 
 ;;;###autoload
 (defun javelin-delete-6 ()
-  "Delete position 6 on javelin."
+  "Delete position 6 of the javelin."
   (interactive)
   (javelin-delete 6))
 
 ;;;###autoload
 (defun javelin-delete-7 ()
-  "Delete position 7 on javelin."
+  "Delete position 7 of the javelin."
   (interactive)
   (javelin-delete 7))
 
 ;;;###autoload
 (defun javelin-delete-8 ()
-  "Delete position 8 on javelin."
+  "Delete position 8 of the javelin."
   (interactive)
   (javelin-delete 8))
 
 ;;;###autoload
 (defun javelin-delete-9 ()
-  "Delete position 9 on javelin."
+  "Delete position 9 of the javelin."
   (interactive)
   (javelin-delete 9))
 
@@ -446,55 +446,55 @@ Also records the current point position for later navigation."
 
 ;;;###autoload
 (defun javelin-assign-to-1 ()
-  "Assign current buffer to position 1 on javelin."
+  "Assign current buffer to position 1 of the javelin."
   (interactive)
   (javelin-assign-to 1))
 
 ;;;###autoload
 (defun javelin-assign-to-2 ()
-  "Assign current buffer to position 2 on javelin."
+  "Assign current buffer to position 2 of the javelin."
   (interactive)
   (javelin-assign-to 2))
 
 ;;;###autoload
 (defun javelin-assign-to-3 ()
-  "Assign current buffer to position 3 on javelin."
+  "Assign current buffer to position 3 of the javelin."
   (interactive)
   (javelin-assign-to 3))
 
 ;;;###autoload
 (defun javelin-assign-to-4 ()
-  "Assign current buffer to position 4 on javelin."
+  "Assign current buffer to position 4 of the javelin."
   (interactive)
   (javelin-assign-to 4))
 
 ;;;###autoload
 (defun javelin-assign-to-5 ()
-  "Assign current buffer to position 5 on javelin."
+  "Assign current buffer to position 5 of the javelin."
   (interactive)
   (javelin-assign-to 5))
 
 ;;;###autoload
 (defun javelin-assign-to-6 ()
-  "Assign current buffer to position 6 on javelin."
+  "Assign current buffer to position 6 of the javelin."
   (interactive)
   (javelin-assign-to 6))
 
 ;;;###autoload
 (defun javelin-assign-to-7 ()
-  "Assign current buffer to position 7 on javelin."
+  "Assign current buffer to position 7 of the javelin."
   (interactive)
   (javelin-assign-to 7))
 
 ;;;###autoload
 (defun javelin-assign-to-8 ()
-  "Assign current buffer to position 8 on javelin."
+  "Assign current buffer to position 8 of the javelin."
   (interactive)
   (javelin-assign-to 8))
 
 ;;;###autoload
 (defun javelin-assign-to-9 ()
-  "Assign current buffer to position 9 on javelin."
+  "Assign current buffer to position 9 of the javelin."
   (interactive)
   (javelin-assign-to 9))
 
@@ -509,70 +509,70 @@ With FORCE (or prefix arg \\[universal-argument]), always assign even if positio
 
 ;;;###autoload
 (defun javelin-go-or-assign-to-1 (&optional force)
-  "Go to or assign position 1 on javelin.
+  "Go to or assign position 1 of the javelin.
 With FORCE (or prefix arg \\[universal-argument]), always assign."
   (interactive "P")
   (javelin-go-or-assign-to 1 force))
 
 ;;;###autoload
 (defun javelin-go-or-assign-to-2 (&optional force)
-  "Go to or assign position 2 on javelin.
+  "Go to or assign position 2 of the javelin.
 With FORCE (or prefix arg \\[universal-argument]), always assign."
   (interactive "P")
   (javelin-go-or-assign-to 2 force))
 
 ;;;###autoload
 (defun javelin-go-or-assign-to-3 (&optional force)
-  "Go to or assign position 3 on javelin.
+  "Go to or assign position 3 of the javelin.
 With FORCE (or prefix arg \\[universal-argument]), always assign."
   (interactive "P")
   (javelin-go-or-assign-to 3 force))
 
 ;;;###autoload
 (defun javelin-go-or-assign-to-4 (&optional force)
-  "Go to or assign position 4 on javelin.
+  "Go to or assign position 4 of the javelin.
 With FORCE (or prefix arg \\[universal-argument]), always assign."
   (interactive "P")
   (javelin-go-or-assign-to 4 force))
 
 ;;;###autoload
 (defun javelin-go-or-assign-to-5 (&optional force)
-  "Go to or assign position 5 on javelin.
+  "Go to or assign position 5 of the javelin.
 With FORCE (or prefix arg \\[universal-argument]), always assign."
   (interactive "P")
   (javelin-go-or-assign-to 5 force))
 
 ;;;###autoload
 (defun javelin-go-or-assign-to-6 (&optional force)
-  "Go to or assign position 6 on javelin.
+  "Go to or assign position 6 of the javelin.
 With FORCE (or prefix arg \\[universal-argument]), always assign."
   (interactive "P")
   (javelin-go-or-assign-to 6 force))
 
 ;;;###autoload
 (defun javelin-go-or-assign-to-7 (&optional force)
-  "Go to or assign position 7 on javelin.
+  "Go to or assign position 7 of the javelin.
 With FORCE (or prefix arg \\[universal-argument]), always assign."
   (interactive "P")
   (javelin-go-or-assign-to 7 force))
 
 ;;;###autoload
 (defun javelin-go-or-assign-to-8 (&optional force)
-  "Go to or assign position 8 on javelin.
+  "Go to or assign position 8 of the javelin.
 With FORCE (or prefix arg \\[universal-argument]), always assign."
   (interactive "P")
   (javelin-go-or-assign-to 8 force))
 
 ;;;###autoload
 (defun javelin-go-or-assign-to-9 (&optional force)
-  "Go to or assign position 9 on javelin.
+  "Go to or assign position 9 of the javelin.
 With FORCE (or prefix arg \\[universal-argument]), always assign."
   (interactive "P")
   (javelin-go-or-assign-to 9 force))
 
 ;;;###autoload
 (defun javelin-go-to-next ()
-  "Go to the next file in javelin."
+  "Go to the next buffer in javelin."
   (interactive)
   (let* ((data (javelin--read-javelin-positions))
          (files (mapcar (lambda (item) (alist-get 'filepath item)) data))
@@ -585,7 +585,7 @@ With FORCE (or prefix arg \\[universal-argument]), always assign."
 
 ;;;###autoload
 (defun javelin-go-to-prev ()
-  "Go to the previous file in javelin."
+  "Go to the previous buffer in javelin."
   (interactive)
   (let* ((data (javelin--read-javelin-positions))
          (files (mapcar (lambda (item) (alist-get 'filepath item)) data))
@@ -598,7 +598,7 @@ With FORCE (or prefix arg \\[universal-argument]), always assign."
 
 ;;;###autoload
 (defun javelin-add-file ()
-  "Add current file to javelin at the next available position.
+  "Add current buffer to javelin at the next available position.
 Also records the current point position for later navigation."
   (interactive)
   (let* ((file-to-add (javelin--buffer-filepath-relative-to-root))
@@ -608,14 +608,14 @@ Also records the current point position for later navigation."
                                (string= (alist-get 'filepath item) file-to-add))
                              data)))
     (if existing
-        (message "This file is already on javelin.")
+        (message "This buffer is already marked in javelin.")
       (let ((next-num (javelin--next-available-position)))
         (javelin--set-entry-by-position next-num file-to-add current-pos)
-        (message "File added to javelin at position %d." next-num)))))
+        (message "Buffer added to javelin at position %d." next-num)))))
 
 ;;;###autoload
 (defun javelin-toggle-quick-menu ()
-  "Open quick menu to select a javelined file."
+  "Open quick menu to select a javelined buffer."
   (interactive)
   (let* ((data (javelin--read-javelin-positions))
          (project-root (javelin--get-project-root))
@@ -700,8 +700,8 @@ Also records the current point position for later navigation."
 
 ;;;###autoload
 (define-minor-mode javelin-minor-mode
-  "Minor mode for quick file navigation with javelin.
-Provides keybindings for jumping to javelined files:
+  "Minor mode for quick buffer navigation with javelin.
+Provides keybindings for jumping to javelined buffers:
   M-1 to M-9: Go to position (or assign if empty, \\[universal-argument] to force assign)
   M-0 0: Clear all positions
   M-0 1-9: Delete position
