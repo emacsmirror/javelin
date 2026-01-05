@@ -363,7 +363,8 @@ JAVELIN-NUMBER: The position (1-9) to assign the current buffer to."
 (defun javelin-go-or-assign-to (javelin-number &optional force)
   "Go to javelin position if occupied, otherwise assign current buffer to it.
 JAVELIN-NUMBER: The position (1-9) to go to or assign.
-With FORCE (or prefix arg \[universal-argument]), always assign even if position is occupied."
+With FORCE (or prefix arg \[universal-argument]), always assign even if
+position is occupied."
   (if (and (not force)
            (bookmark-get-bookmark (javelin--bookmark-name javelin-number) 'noerror))
       (javelin-go-to javelin-number)
@@ -440,7 +441,7 @@ DIRECTION should be 1 for next, -1 for previous."
     (if (null positions)
         (message "No javelin positions set.")
       (let* ((current (javelin--position-for-current-buffer))
-             (current-index (or (cl-position current positions) -1))
+             (current-index (or (seq-position positions current) -1))
              (new-index (mod (+ current-index direction) (length positions)))
              (new-pos (nth new-index positions)))
         (when new-pos
