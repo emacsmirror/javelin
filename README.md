@@ -52,10 +52,17 @@ In `config.el`:
 
 ## Commands
 
-- `javelin-add-file` - Add current buffer to next available position
+- `javelin-go-or-assign-to-<NUM>` - Go to position if occupied, otherwise assign (prefix arg to force assign)
+- `javelin-delete-<NUM>` - Delete position `<NUM>`
 - `javelin-toggle-quick-menu` - Select from javelined buffers
+- `javelin-go-to-<NUM>` - Go to buffer at position `<NUM>`
+- `javelin-assign-to-<NUM>` - Assign current buffer to position `<NUM>`
 - `javelin-go-to-next` / `javelin-go-to-prev` - Cycle through javelined buffers
-- `javelin-clear` - Clear all positions
+- `javelin-add-file` - Add current buffer to next available position
+- `javelin-clear` - Clear all positions for current project/branch
+- `javelin-clear-all` - Clear all positions across all projects
+
+Where `<NUM>` is a number from 1-9.
 
 ---
 
